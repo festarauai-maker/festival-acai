@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel - Festival do Açaí</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;font-family:Arial,sans-serif;background:#f4eef8;color:#2b1636}
+header{background:#5b1f7a;color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:3}
+header h1{margin:0;font-size:17px}
+header small{display:block;font-size:12px;opacity:.85;font-weight:normal}
+header button{background:#fff;color:#5b1f7a;border:0;border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}
+main{max-width:720px;margin:auto;padding:10px}
+button{font:inherit;cursor:pointer}
+input,select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font:inherit;margin-bottom:10px;background:#fff}
+.login{max-width:360px;margin:40px auto;background:#fff;padding:20px;border-radius:12px}
+.login h2{margin-top:0;color:#5b1f7a}
+.big{width:100%;background:#5b1f7a;color:#fff;border:0;border-radius:10px;padding:12px;font-size:16px}
+.err{color:#b00020;font-size:14px;margin-top:8px}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tabs button{flex:1;padding:10px;border:1px solid #5b1f7a;background:#fff;color:#5b1f7a;border-radius:10px}
+.tabs button.on{background:#5b1f7a;color:#fff}
+.filtros{display:flex;gap:6px}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;border-left:6px solid #5b1f7a;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card.novo{border-left-color:#e0a800}
+.card.aceito{border-left-color:#1e88e5}
+.card.preparo{border-left-color:#f57c00}
+.card.pronto{border-left-color:#8e24aa}
+.card.entrega{border-left-color:#2e8b3d}
+.card.entregue{border-left-color:#999}
+.card.cancelado{border-left-color:#b00020;opacity:.7}
+.top{display:flex;justify-content:space-between;font-size:14px}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;background:#e3f2fd;margin-left:4px}
+.tag.s{background:#fce4ec}
+.st{font-weight:bold;color:#5b1f7a;margin:6px 0}
+.bl{border:1px solid #e3d5ec;border-radius:10px;padding:8px;margin-top:8px;background:#fbf9fc}
+.bl.meu{border:2px solid #5b1f7a;background:#fff8e1}
+.bh{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#5b1f7a;margin-bottom:4px}
+.chip{padding:3px 10px;border-radius:10px;font-size:12px;color:#fff;background:#999}
+.chip.novo{background:#e0a800}
+.chip.aceito{background:#1e88e5}
+.chip.preparo{background:#f57c00}
+.chip.pronto{background:#8e24aa}
+.chip.entregue{background:#2e8b3d}
+.row{font-size:15px;margin:2px 0}
+.info{font-size:14px;margin-top:10px;line-height:1.5}
+.acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.acts button,.acts a,.bl button{flex:1;min-width:130px;padding:12px;border:0;border-radius:10px;font-size:15px;color:#fff;background:#2e8b3d;text-align:center;text-decoration:none}
+.bl button{width:100%;margin-top:8px}
+.acts .c{background:#b00020;flex:0 0 auto;min-width:0}
+.acts .p{background:#1e88e5}
+.acts .w{background:#25d366}
+.acts .d{background:#8e24aa}
+.esp{font-size:13px;color:#8e24aa;margin-top:8px;text-align:center}
+.vazio{text-align:center;color:#777;padding:30px}
+#conf{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9;display:flex;align-items:center;justify-content:center;padding:14px}
+#conf>div{background:#fff;border-radius:14px;padding:16px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+.ck{display:block;font-size:16px;margin:10px 0}
+.ck input{width:auto;margin:0 8px 0 0}
+#confBtn{width:100%;background:#8e24aa;color:#fff;border:0;border-radius:10px;padding:13px;font-size:16px;margin-top:8px}
+#confBtn:disabled{opacity:.4}
+</style>
+</head>
+<body>
+
+<div id="telaLogin" class="login" hidden>
+  <h2>Painel do Festival</h2>
+  <input id="email" type="email" placeholder="E-mail">
+  <input id="senha" type="password" placeholder="Senha">
+  <button class="big" onclick="entrar()">Entrar</button>
+  <div class="err" id="erro"></div>
+</div>
+
+<div id="telaPainel" hidden>
+  <header>
+    <h1><span id="quem"></span><small id="qtdAtivos"></small></h1>
+    <button onclick="sair()">Sair</button>
+  </header>
+  <main>
+    <div class="tabs">
+      <button id="tAtivos" class="on" onclick="aba('ativos')">Ativos</button>
+      <button id="tFim" onclick="aba('fim')">Finalizados</button>
+    </div>
+    <div class="filtros">
+      <select id="fSetor" onchange="render()">
+        <option value="meu">Pedidos do meu setor</option>
+        <option value="todos">Todos os pedidos</option>
+      </select>
+      <select id="fOrigem" onchange="render()">
+        <option value="">Delivery e salão</option>
+        <option value="delivery">Só delivery</option>
+        <option value="salao">Só salão</option>
+      </select>
+    </div>
+    <div id="lista"></div>
+    <div class="err" id="erroLista"></div>
+  </main>
+</div>
+
+<div id="conf" hidden><div>
+  <h2 style="margin-top:0;color:#5b1f7a">Conferência do pedido</h2>
+  <p style="font-size:14px">Marque cada item conferido:</p>
+  <div id="confLista"></div>
+  <button id="confBtn" onclick="despachar()" disabled>Despachar entrega</button>
+  <button class="sec" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;border:1px solid #5b1f7a;background:#fff;color:#5b1f7a" onclick="document.getElementById('conf').hidden=true">Cancelar</button>
+</div></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+function $(id){ return document.getElementById(id); }
+function R(v){ return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+var ST = {novo:"⏳ Novo pedido",aceito:"✅ Aceito",preparo:"👨‍🍳 Em preparo",pronto:"📦 Pronto",entrega:"🛵 Saiu para entrega",entregue:"🎉 Finalizado",cancelado:"❌ Cancelado"};
+var SS = {novo:"Novo",aceito:"Aceito",preparo:"Em preparo",pronto:"Pronto",entregue:"Entregue"};
+var SEQ = ["novo","aceito","preparo","pronto","entregue"];
+var SETORES = ["Restaurante","Lanchonete"];
+var auth = null, db = null, eu = null, pedidos = [], vendo = "ativos", conhecidos = {}, primeira = true, unsub = null, actx = null, confId = null;
+
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCz4k8BD-q5yGDyeKnRQ7aHNZbOcLvCTPk",
+    authDomain: "festival-acai-arauai.firebaseapp.com",
+    projectId: "festival-acai-arauai",
+    storageBucket: "festival-acai-arauai.firebasestorage.app",
+    messagingSenderId: "869331257830",
+    appId: "1:869331257830:web:3b1b138e9d59e199622e27"
+  });
+  auth = firebase.auth();
+  db = firebase.firestore();
+} catch (e) {}
+
+function telaLogin(msg) {
+  if (unsub) unsub(); unsub = null; primeira = true; conhecidos = {}; eu = null;
+  $("telaPainel").hidden = true; $("telaLogin").hidden = false;
+  if (msg) $("erro").textContent = msg;
+}
+
+if (!auth) {
+  telaLogin("Sem conexão com o sistema. Verifique a internet e recarregue.");
+} else {
+  auth.onAuthStateChanged(function(u){
+    if (!u) { telaLogin(); return; }
+    db.collection("equipe").doc((u.email || "").toLowerCase()).get().then(function(d){
+      var m = d.exists ? d.data() : null;
+      if (!m || m.papel !== "painel") { auth.signOut(); telaLogin("Este login não tem acesso ao painel."); return; }
+      if (SETORES.indexOf(m.setor) < 0) { auth.signOut(); telaLogin("Falta definir o setor deste login (Restaurante ou Lanchonete)."); return; }
+      eu = m;
+      $("quem").textContent = (m.nome || "Painel") + " · " + m.setor;
+      $("telaLogin").hidden = true; $("telaPainel").hidden = false;
+      ouvir();
+    }).catch(function(){ auth.signOut(); telaLogin("Não foi possível verificar o acesso."); });
+  });
+}
+
+function entrar() {
+  $("erro").textContent = "";
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  auth.signInWithEmailAndPassword($("email").value.trim(), $("senha").value)
+    .catch(function(){ $("erro").textContent = "E-mail ou senha incorretos."; });
+}
+function sair() { auth.signOut(); }
+
+function beep() {
+  try {
+    if (!actx) return;
+    [0, 0.25, 0.5].forEach(function(t){
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.value = 880; g.gain.value = 0.3;
+      o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 0.15);
+    });
+  } catch (e) {}
+}
+
+function envolve(p) { return !!(p.setores && p.setores[eu.setor]); }
+
+function ouvir() {
+  if (unsub) unsub();
+  unsub = db.collection("pedidos").orderBy("criadoEm", "asc").onSnapshot(function(snap){
+    $("erroLista").textContent = "";
+    var novoChegou = false;
+    pedidos = snap.docs.map(function(d){
+      var p = d.data(); p.id = d.id;
+      if (!conhecidos[d.id]) { conhecidos[d.id] = 1; if (!primeira && p.status === "novo" && envolve(p)) novoChegou = true; }
+      return p;
+    });
+    primeira = false;
+    if (novoChegou) beep();
+    render();
+  }, function(e){ $("erroLista").textContent = "Erro ao carregar pedidos: " + e.message; });
+}
+
+function aba(a) {
+  vendo = a;
+  $("tAtivos").className = a === "ativos" ? "on" : "";
+  $("tFim").className = a === "fim" ? "on" : "";
+  render();
+}
+
+function hora(p) {
+  try { return p.criadoEm.toDate().toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); } catch (e) { return "agora"; }
+}
+function achar(id) { for (var i = 0; i < pedidos.length; i++) if (pedidos[i].id === id) return pedidos[i]; return null; }
+function secoes(p) { return SETORES.filter(function(s){ return p.setores && p.setores[s]; }); }
+function disp(p) { var s = secoes(p); return s.length === 2 ? "Lanchonete" : s[0]; }
+function fim(p) { return p.status === "entregue" || p.status === "cancelado"; }
+
+function render() {
+  if (!eu) return;
+  var so = $("fSetor").value, of = $("fOrigem").value;
+  var ativos = pedidos.filter(function(p){ return !fim(p) && envolve(p); });
+  $("qtdAtivos").textContent = ativos.length + " ativo(s) no seu setor";
+  var lista = pedidos.filter(function(p){
+    if (so === "meu" && !envolve(p)) return false;
+    if (of && p.origem !== of) return false;
+    return vendo === "ativos" ? !fim(p) : fim(p);
+  });
+  if (vendo === "fim") lista.reverse();
+  if (!lista.length) { $("lista").innerHTML = '<div class="vazio">Nenhum pedido aqui.</div>'; return; }
+  $("lista").innerHTML = lista.map(card).join("");
+}
+
+function blocoSetor(p, s) {
+  var st = p.setores[s], meu = s === eu.setor, salao = p.origem === "salao";
+  var h = '<div class="bl' + (meu ? " meu" : "") + '"><div class="bh"><b>' + s.toUpperCase() + (meu ? " (seu setor)" : "") + '</b><span class="chip ' + st + '">' + (SS[st] || st) + '</span></div>';
+  (p.itens || []).forEach(function(x){
+    if (x.secao === s) h += '<div class="row">' + x.qtd + 'x ' + esc(x.nome) + (x.sabor ? " – " + esc(x.sabor) : "") + '</div>';
+  });
+  var fechado = p.status === "cancelado" || p.status === "entregue" || p.status === "entrega";
+  if (meu && !fechado) {
+    var nx = {novo: ["aceito", "Aceitar"], aceito: ["preparo", "Iniciar preparo"], preparo: ["pronto", "Marcar pronto"]}[st];
+    if (!nx && st === "pronto" && salao) nx = ["entregue", "Marcar minha parte como entregue"];
+    if (nx) h += '<button onclick="mudarSetor(\'' + p.id + '\',\'' + s + '\',\'' + nx[0] + '\')">' + nx[1] + '</button>';
+  }
+  return h + "</div>";
+}
+
+function card(p) {
+  var c = p.cliente || {}, salao = p.origem === "salao", h = "";
+  secoes(p).forEach(function(s){ h += blocoSetor(p, s); });
+  var info = "";
+  if (salao) {
+    info += "🍽️ " + esc(c.nome || "Salão") + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + "<br>🧑‍🍳 Garçom: " + esc(p.garcom) + "<br>";
+  } else {
+    info += "👤 " + esc(c.nome) + " · 📞 " + esc(c.tel) + "<br>📍 " + esc(c.end) + (c.ref ? " (" + esc(c.ref) + ")" : "") + "<br>";
+  }
+  if (p.obs) info += "📝 " + esc(p.obs) + "<br>";
+  var forma = p.pagamento === "pix" ? "💠 Pix" : "💵 Dinheiro" + (p.troco ? " (troco para " + R(p.troco) + ")" : "");
+  var pgBox = '<div style="margin-top:10px;padding:10px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:' + (p.pago ? "#e8f5e9" : "#fff8e1") + ';border:1px solid ' + (p.pago ? "#2e8b3d" : "#e0a800") + '"><div><b>' + forma + '</b><br><small>' + (p.pago ? "PAGO ✅" : "Aguardando pagamento") + '</small></div><div style="font-size:20px;font-weight:bold;color:#5b1f7a">' + R(p.total) + '</div></div>';
+  var acts = "", d = !salao ? disp(p) : null;
+  if (!salao && p.status === "pronto") {
+    if (eu.setor === d) acts += '<button class="d" onclick="abrirConf(\'' + p.id + '\')">Conferir e despachar</button>';
+    else acts += '<div class="esp">Tudo pronto. Aguardando a ' + d + ' despachar.</div>';
+  }
+  if (!salao && p.status === "entrega" && eu.setor === d) acts += '<button onclick="finalizar(\'' + p.id + '\')">Marcar como entregue</button>';
+  if (!salao && !p.pago && p.status !== "cancelado") acts += '<button class="p" onclick="pago(\'' + p.id + '\')">' + (p.pagamento === "pix" ? "Confirmar Pix" : "Confirmar dinheiro recebido") + '</button>';
+  if (!salao && c.tel) {
+    var n = String(c.tel).replace(/\D/g, ""); if (n.length <= 11) n = "55" + n;
+    acts += '<a class="w" href="https://wa.me/' + n + '" target="_blank">WhatsApp</a>';
+  }
+  if (!fim(p)) acts += '<button class="c" onclick="cancelar(\'' + p.id + '\')">Cancelar</button>';
+  return '<div class="card ' + p.status + '"><div class="top"><span><b>#' + p.id.slice(0, 5).toUpperCase() + '</b><span class="tag ' + (salao ? "s" : "") + '">' + (salao ? "Salão" : "Delivery") + '</span></span><span>' + hora(p) + '</span></div><div class="st">' + (ST[p.status] || p.status) + '</div>' + h + '<div class="info">' + info + '</div>' + pgBox + '<div class="acts">' + acts + '</div></div>';
+}
+
+// status geral calculado a partir dos setores
+function geral(origem, st) {
+  var m = 4;
+  Object.keys(st).forEach(function(k){ var i = SEQ.indexOf(st[k]); if (i < m) m = i; });
+  if (origem === "salao") return SEQ[m];
+  return m >= 3 ? "pronto" : SEQ[m];
+}
+
+function mudarSetor(id, setor, novo) {
+  var ref = db.collection("pedidos").doc(id);
+  db.runTransaction(function(t){
+    return t.get(ref).then(function(s){
+      var p = s.data(), st = p.setores || {};
+      if (p.status === "cancelado" || p.status === "entregue" || p.status === "entrega") return;
+      st[setor] = novo;
+      var up = {status: geral(p.origem, st)};
+      up["setores." + setor] = novo;
+      t.update(ref, up);
+    });
+  }).catch(function(e){ alert("Erro: " + e.message); });
+}
+
+function abrirConf(id) {
+  var p = achar(id); if (!p) return;
+  confId = id;
+  var h = "";
+  (p.itens || []).forEach(function(x){
+    h += '<label class="ck"><input type="checkbox" onchange="ckConf()">' + x.qtd + 'x ' + esc(x.nome) + (x.sabor ? " – " + esc(x.sabor) : "") + ' <small>(' + esc(x.secao) + ')</small></label>';
+  });
+  $("confLista").innerHTML = h;
+  $("confBtn").disabled = true;
+  $("conf").hidden = false;
+}
+function ckConf() {
+  var cs = document.querySelectorAll("#confLista input"), ok = true;
+  for (var i = 0; i < cs.length; i++) if (!cs[i].checked) ok = false;
+  $("confBtn").disabled = !ok;
+}
+function despachar() {
+  db.collection("pedidos").doc(confId).update({status: "entrega"}).catch(function(e){ alert("Erro: " + e.message); });
+  $("conf").hidden = true;
+}
+function finalizar(id) { db.collection("pedidos").doc(id).update({status: "entregue"}).catch(function(e){ alert("Erro: " + e.message); }); }
+function pago(id) { db.collection("pedidos").doc(id).update({pago: true}).catch(function(e){ alert("Erro: " + e.message); }); }
+function cancelar(id) {
+  if (confirm("Cancelar este pedido inteiro?")) db.collection("pedidos").doc(id).update({status: "cancelado"}).catch(function(e){ alert("Erro: " + e.message); });
+}
+</script>
+</body>
+</html>
