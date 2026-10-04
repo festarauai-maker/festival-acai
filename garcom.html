@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Garçom - Festival do Açaí</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;font-family:Arial,sans-serif;background:#f4eef8;color:#2b1636;padding-bottom:90px}
+h1,h2,.fd{font-family:'Fredoka',Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+input,textarea,select{width:100%;padding:11px;border:1px solid #ccc;border-radius:10px;font:inherit;background:#fff}
+.login{max-width:360px;margin:40px auto;background:#fff;padding:20px;border-radius:12px}
+.login h2{margin-top:0;color:#5b1f7a}
+.login input{margin-bottom:10px}
+.big{width:100%;background:#2e8b3d;color:#fff;border:0;border-radius:14px;padding:15px;font-size:16px;margin-top:14px}
+.big.roxo{background:#5b1f7a;margin-top:0}
+.err{color:#b00020;font-size:14px;margin-top:8px}
+header{background:linear-gradient(160deg,#3d0f57,#7d3aa0);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:18px}
+header small{display:block;font-size:12px;opacity:.85;font-family:Arial,sans-serif;font-weight:normal}
+header button{background:#fff;color:#5b1f7a;border:0;border-radius:8px;padding:8px 12px}
+.tabs{display:flex;gap:6px;padding:10px 12px 0;max-width:640px;margin:auto}
+.tabs button{flex:1;padding:11px;border:1px solid #5b1f7a;background:#fff;color:#5b1f7a;border-radius:12px;font-family:'Fredoka',Arial,sans-serif;font-size:15px}
+.tabs button.on{background:#5b1f7a;color:#fff}
+#chips{position:sticky;top:0;z-index:4;display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:rgba(244,238,248,.96);scrollbar-width:none}
+#chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:0;background:#fff;color:#5b1f7a;font-family:'Fredoka',Arial,sans-serif;font-size:15px;padding:9px 18px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.chip.on{background:#5b1f7a;color:#fff}
+main,.wrap{max-width:640px;margin:auto;padding:4px 12px}
+h2{color:#5b1f7a;margin:18px 0 8px;font-size:20px;scroll-margin-top:70px}
+.it{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.nm{font-weight:bold;font-size:15px}
+.nm span{font-size:13px;color:#777;font-weight:normal;display:block;margin-top:2px}
+.ctl{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.qn{min-width:18px;text-align:center;font-size:16px}
+.add{background:#5b1f7a;color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:22px;line-height:1}
+.mn{background:#fff;color:#5b1f7a;border:2px solid #5b1f7a;border-radius:50%;width:38px;height:38px;font-size:22px;line-height:1}
+#bar{position:fixed;bottom:0;left:0;right:0;padding:10px;background:#f4eef8;z-index:6}
+#bar button{width:100%;max-width:640px;display:flex;justify-content:space-between;background:#2e8b3d;color:#fff;border:0;border-radius:14px;padding:15px;font-size:16px;margin:auto;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.sheet{position:fixed;top:0;left:0;right:0;bottom:0;background:#f4eef8;overflow:auto;padding:14px;z-index:8}
+.sheet>div{max-width:640px;margin:auto}
+.q{display:flex;align-items:center;gap:8px}
+.q button{width:32px;height:32px;border-radius:50%;border:1px solid #5b1f7a;background:#fff;color:#5b1f7a;font-size:18px}
+label{display:block;margin:10px 0 3px;font-size:14px;font-weight:bold}
+.sec{background:#fff;border:1px solid #5b1f7a;color:#5b1f7a;border-radius:14px;padding:11px;width:100%;margin-top:8px}
+.box{background:#fff;border-radius:14px;padding:14px;margin-top:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#pix{word-break:break-all;font-size:11px;background:#eee;padding:8px;border-radius:8px;margin-top:8px}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;border-left:6px solid #5b1f7a;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card.pronto{border-left-color:#2e8b3d;background:#f1fbf3}
+.card.cancelado{border-left-color:#b00020;opacity:.7}
+.card.entregue{border-left-color:#999}
+.top{display:flex;justify-content:space-between;font-size:14px}
+.cs{display:inline-block;padding:4px 10px;border-radius:10px;font-size:13px;color:#fff;background:#999;margin:6px 6px 0 0}
+.cs.novo{background:#e0a800}
+.cs.aceito{background:#1e88e5}
+.cs.preparo{background:#f57c00}
+.cs.pronto{background:#2e8b3d}
+.cs.entregue{background:#777}
+.ready{background:#2e8b3d;color:#fff;border-radius:10px;padding:10px;margin-top:8px;font-weight:bold;text-align:center}
+.row{font-size:14px;margin:2px 0}
+.resumo{background:#fff;border-radius:14px;padding:12px;margin-top:10px;text-align:center;font-family:'Fredoka',Arial,sans-serif;color:#5b1f7a}
+.vazio{text-align:center;color:#777;padding:30px}
+</style>
+</head>
+<body>
+
+<div id="telaLogin" class="login" hidden>
+  <h2>Garçom - Festival do Açaí</h2>
+  <input id="email" type="email" placeholder="E-mail">
+  <input id="senha" type="password" placeholder="Senha">
+  <button class="big roxo" onclick="entrar()">Entrar</button>
+  <div class="err" id="erro"></div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1><span id="quem"></span><small>Garçom</small></h1>
+    <button onclick="sair()">Sair</button>
+  </header>
+  <div class="tabs">
+    <button id="tNovo" class="on" onclick="aba('novo')">Novo pedido</button>
+    <button id="tMeus" onclick="aba('meus')">Meus pedidos</button>
+  </div>
+
+  <div id="vNovo">
+    <nav id="chips"></nav>
+    <main id="menu"></main>
+  </div>
+
+  <div id="vMeus" hidden>
+    <div class="wrap">
+      <div class="resumo" id="vendas"></div>
+      <div class="err" id="erroM"></div>
+      <div id="listaM"></div>
+    </div>
+  </div>
+</div>
+
+<div id="bar" hidden><button onclick="openCart()"><span id="cnt"></span><b id="tot"></b></button></div>
+
+<section id="cart" class="sheet" hidden><div>
+  <h2>🛒 Pedido</h2>
+  <div id="lista"></div>
+  <p><b>Total: <span id="tot2"></span></b></p>
+  <label>Nome do cliente</label><input id="nome">
+  <label>Mesa (opcional)</label><input id="mesa">
+  <label>Observações</label><textarea id="obs" rows="2"></textarea>
+  <label>Pagamento</label>
+  <select id="pg">
+    <option value="dinheiro">Dinheiro</option>
+    <option value="pix">Pix</option>
+  </select>
+  <button class="big" id="enviar" onclick="enviar()">Enviar pedido</button>
+  <button class="sec" onclick="closeCart()">← Voltar ao cardápio</button>
+</div></section>
+
+<section id="ok" class="sheet" hidden><div>
+  <h2>✅ Pedido enviado</h2>
+  <div class="box" id="okBox"></div>
+  <button class="big roxo" style="margin-top:14px" onclick="fecharOk()">Novo pedido</button>
+</div></section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ===== DADOS DO PIX (troque aqui quando tiver a nova chave) =====
+// nome: até 25 letras, MAIÚSCULAS e sem acento. cidade: sem acento.
+var PIX = {chave: "+5591985741911", nome: "LUCAS MANASSES DE JESUS S", cidade: "BELEM"};
+// ================================================================
+
+// [nome, preço, pede sabor?]
+var M = {
+ "Restaurante":[["Churrasco de carne",7],["Churrasco de frango",7],["Churrasco misto",8],["Pirarucu",10],["Charque",8],["Camarão",8],["Peixe frito",7],["Piau assado",8]],
+ "Açaí":[["Açaí porção 500ml",8],["Açaí litro",15]],
+ "Lanchonete":[["Sorvete",5,1],["Picolé",4,1],["Arroz com galinha",6],["Pudim",5],["Torta salgada",7],["Lasanha",8],["Bolo Chocoloko",8],["Coxinha",4]],
+ "Bebidas":[["Suco",3],["Coca-Cola 2L",12],["Fanta uva 2L",12],["Fanta laranja 2L",12],["Tuchaua 2L",9],["Splash 2L",8,1],["Água mineral",4]]
+};
+var SEC = {"Restaurante":"Restaurante","Açaí":"Restaurante","Lanchonete":"Lanchonete","Bebidas":"Lanchonete"};
+var SETORES = ["Restaurante","Lanchonete"];
+var SS = {novo:"Novo",aceito:"Aceito",preparo:"Em preparo",pronto:"PRONTO",entregue:"Entregue"};
+var STG = {novo:"Aguardando aceite",aceito:"Aceito",preparo:"Em preparo",pronto:"Pronto",entrega:"Em entrega",entregue:"Finalizado",cancelado:"Cancelado"};
+function $(id){ return document.getElementById(id); }
+function R(v){ return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+var cart = {}, auth = null, db = null, eu = null, meus = [], prev = {}, primeira = true, unsub = null, actx = null, pixKey = "";
+
+// ---------- Cardápio ----------
+var cats = Object.keys(M), h = "", chips = "";
+cats.forEach(function(c, ci){
+  chips += '<button id="chip' + ci + '" class="chip" onclick="goto(' + ci + ')">' + c + '</button>';
+  h += '<h2 id="sec' + ci + '">' + c + '</h2>';
+  M[c].forEach(function(x, i){
+    h += '<div class="it"><div class="nm">' + x[0] + '<span>' + R(x[1]) + (x[2] ? " · escolha o sabor" : "") + '</span></div><div class="ctl" id="ctl' + ci + '_' + i + '"></div></div>';
+  });
+});
+$("chips").innerHTML = chips;
+$("menu").innerHTML = h;
+
+function goto(ci) { $("sec" + ci).scrollIntoView({behavior: "smooth", block: "start"}); }
+function marca() {
+  if ($("vNovo").hidden) return;
+  var a = 0;
+  cats.forEach(function(c, ci){ if ($("sec" + ci).getBoundingClientRect().top <= 90) a = ci; });
+  cats.forEach(function(c, ci){ $("chip" + ci).className = "chip" + (ci === a ? " on" : ""); });
+  $("chips").scrollLeft = $("chip" + a).offsetLeft - 20;
+}
+window.addEventListener("scroll", marca);
+
+function qtd(nome) { var n = 0; for (var k in cart) if (cart[k].n === nome) n += cart[k].q; return n; }
+function ctlHTML(c, i) {
+  var n = qtd(M[c][i][0]);
+  var plus = '<button class="add" onclick="add(\'' + c + '\',' + i + ')">+</button>';
+  if (!n) return plus;
+  return '<button class="mn" onclick="dec(\'' + c + '\',' + i + ')">−</button><b class="qn">' + n + '</b>' + plus;
+}
+function add(c, i) {
+  var x = M[c][i], s = "";
+  if (x[2]) { s = (prompt("Qual o sabor de " + x[0] + "?") || "").trim(); if (!s) return; }
+  var k = c + "|" + x[0] + "|" + s;
+  if (!cart[k]) cart[k] = {n: x[0], p: x[1], q: 0, s: s, sec: SEC[c]};
+  cart[k].q++;
+  upd();
+}
+function dec(c, i) {
+  var nome = M[c][i][0], ult = null;
+  for (var k in cart) if (cart[k].n === nome) ult = k;
+  if (ult) chg(ult, -1);
+}
+function chg(k, d) {
+  cart[k].q += d;
+  if (cart[k].q <= 0) delete cart[k];
+  upd();
+  if (!Object.keys(cart).length) closeCart();
+}
+function total() { var t = 0; for (var k in cart) t += cart[k].p * cart[k].q; return t; }
+function upd() {
+  var n = 0; for (var k in cart) n += cart[k].q;
+  $("bar").hidden = !n || !$("vNovo") || $("vNovo").hidden || !eu;
+  $("cnt").textContent = "🛒 Ver pedido (" + n + ")";
+  $("tot").textContent = R(total());
+  $("tot2").textContent = R(total());
+  cats.forEach(function(c, ci){ M[c].forEach(function(x, i){ $("ctl" + ci + "_" + i).innerHTML = ctlHTML(c, i); }); });
+  var l = "";
+  Object.keys(cart).forEach(function(k){
+    var x = cart[k], kk = k.replace(/'/g, "\\'");
+    l += '<div class="it"><div class="nm">' + esc(x.n) + (x.s ? " – " + esc(x.s) : "") + '<span>' + R(x.p * x.q) + '</span></div><div class="q"><button onclick="chg(\'' + kk + '\',-1)">−</button>' + x.q + '<button onclick="chg(\'' + kk + '\',1)">+</button></div></div>';
+  });
+  $("lista").innerHTML = l;
+}
+function openCart() { $("cart").hidden = false; }
+function closeCart() { $("cart").hidden = true; }
+upd(); marca();
+
+// ---------- Firebase e login ----------
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCz4k8BD-q5yGDyeKnRQ7aHNZbOcLvCTPk",
+    authDomain: "festival-acai-arauai.firebaseapp.com",
+    projectId: "festival-acai-arauai",
+    storageBucket: "festival-acai-arauai.firebasestorage.app",
+    messagingSenderId: "869331257830",
+    appId: "1:869331257830:web:3b1b138e9d59e199622e27"
+  });
+  auth = firebase.auth();
+  db = firebase.firestore();
+} catch (e) {}
+
+function telaLogin(msg) {
+  if (unsub) unsub(); unsub = null; primeira = true; prev = {}; eu = null; meus = [];
+  $("app").hidden = true; $("bar").hidden = true; $("telaLogin").hidden = false;
+  if (msg) $("erro").textContent = msg;
+}
+if (!auth) {
+  telaLogin("Sem conexão com o sistema. Verifique a internet e recarregue.");
+} else {
+  telaLogin();
+  auth.onAuthStateChanged(function(u){
+    if (!u) { telaLogin(); return; }
+    db.collection("equipe").doc((u.email || "").toLowerCase()).get().then(function(d){
+      var m = d.exists ? d.data() : null;
+      if (!m || m.papel !== "garcom" || !m.nome) { auth.signOut(); telaLogin("Este login não tem acesso à tela do garçom."); return; }
+      eu = m;
+      $("quem").textContent = m.nome;
+      $("telaLogin").hidden = true; $("app").hidden = false;
+      upd(); ouvir();
+    }).catch(function(){ auth.signOut(); telaLogin("Não foi possível verificar o acesso."); });
+  });
+}
+function entrar() {
+  $("erro").textContent = "";
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  auth.signInWithEmailAndPassword($("email").value.trim(), $("senha").value)
+    .catch(function(){ $("erro").textContent = "E-mail ou senha incorretos."; });
+}
+function sair() { auth.signOut(); }
+
+function aba(a) {
+  $("vNovo").hidden = a !== "novo";
+  $("vMeus").hidden = a !== "meus";
+  $("tNovo").className = a === "novo" ? "on" : "";
+  $("tMeus").className = a === "meus" ? "on" : "";
+  upd(); marca();
+}
+
+function beep() {
+  try {
+    if (actx) [0, 0.25, 0.5].forEach(function(t){
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.value = 880; g.gain.value = 0.3;
+      o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 0.15);
+    });
+  } catch (e) {}
+  try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+}
+
+// ---------- Enviar pedido ----------
+function enviar() {
+  var nome = $("nome").value.trim();
+  if (!nome) { alert("Informe o nome do cliente."); return; }
+  var b = $("enviar"); b.disabled = true; b.textContent = "Enviando...";
+  var pg = $("pg").value, setores = {};
+  var itens = Object.keys(cart).map(function(k){
+    var x = cart[k];
+    setores[x.sec] = "novo";
+    return {nome: x.n, sabor: x.s, qtd: x.q, preco: x.p, secao: x.sec};
+  });
+  var p = {
+    origem: "salao", status: "novo", pago: false, setores: setores, garcom: eu.nome,
+    cliente: {nome: nome}, mesa: $("mesa").value.trim(),
+    obs: $("obs").value.trim(), pagamento: pg, troco: 0,
+    itens: itens, total: total(),
+    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  db.collection("pedidos").add(p).then(function(d){
+    cart = {}; upd(); closeCart();
+    $("nome").value = ""; $("mesa").value = ""; $("obs").value = "";
+    mostrarOk(d.id, p);
+    b.disabled = false; b.textContent = "Enviar pedido";
+  }).catch(function(e){
+    alert("Não foi possível enviar o pedido: " + e.message);
+    b.disabled = false; b.textContent = "Enviar pedido";
+  });
+}
+
+function mostrarOk(id, p) {
+  var h = "<b>Pedido #" + id.slice(0, 5).toUpperCase() + "</b><br>" + esc(p.cliente.nome) + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + "<br><b>Total: " + R(p.total) + "</b><hr>";
+  if (p.pagamento === "pix") {
+    pixKey = brcode(p.total);
+    h += '<b>Pix: ' + R(p.total) + '</b><div id="qr" style="display:flex;justify-content:center;margin:10px"></div><div id="pix">' + pixKey + '</div><button class="sec" onclick="copiar()">Copiar código Pix</button><p style="font-size:13px">A equipe confirma o pagamento pelo comprovante.</p>';
+  } else {
+    h += '💵 <b>Dinheiro</b><label>Valor recebido (R$)</label><input id="rec" type="number" inputmode="decimal" oninput="troco(' + p.total + ')"><div id="tr" style="font-size:20px;margin-top:10px;font-weight:bold;color:#2e8b3d"></div>';
+  }
+  $("okBox").innerHTML = h;
+  $("ok").hidden = false;
+  if (p.pagamento === "pix") { try { new QRCode($("qr"), {text: pixKey, width: 200, height: 200}); } catch (e) {} }
+}
+function troco(t) {
+  var v = Number($("rec").value);
+  if (!v) { $("tr").textContent = ""; return; }
+  $("tr").textContent = v >= t ? "Troco: " + R(v - t) : "Faltam " + R(t - v);
+  $("tr").style.color = v >= t ? "#2e8b3d" : "#b00020";
+}
+function copiar() {
+  try { navigator.clipboard.writeText(pixKey).then(function(){ alert("Código copiado!"); }); }
+  catch (e) { alert("Segure o texto do código para copiar."); }
+}
+function fecharOk() { $("ok").hidden = true; aba("novo"); window.scrollTo(0, 0); }
+
+// ---------- Meus pedidos ----------
+function ms(p) { try { return p.criadoEm.toMillis(); } catch (e) { return Date.now(); } }
+function hora(p) { try { return p.criadoEm.toDate().toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); } catch (e) { return "agora"; } }
+
+function ouvir() {
+  if (unsub) unsub();
+  unsub = db.collection("pedidos").where("garcom", "==", eu.nome).onSnapshot(function(snap){
+    $("erroM").textContent = "";
+    var alerta = false;
+    meus = snap.docs.map(function(d){
+      var p = d.data(); p.id = d.id;
+      Object.keys(p.setores || {}).forEach(function(s){
+        var k = p.id + s, n = p.setores[s];
+        if (!primeira && n === "pronto" && prev[k] && prev[k] !== "pronto") alerta = true;
+        prev[k] = n;
+      });
+      return p;
+    });
+    primeira = false;
+    if (alerta) beep();
+    renderMeus();
+  }, function(e){ $("erroM").textContent = "Erro ao carregar seus pedidos: " + e.message; });
+}
+
+function pagar(id) {
+  if (confirm("Confirmar que o pagamento foi recebido?")) {
+    db.collection("pedidos").doc(id).update({pago: true}).catch(function(e){ alert("Erro: " + e.message); });
+  }
+}
+
+function renderMeus() {
+  meus.sort(function(a, b){ return ms(b) - ms(a); });
+  var rec = 0, rcb = 0, n = 0;
+  meus.forEach(function(p){
+    if (p.status === "cancelado") return;
+    n++;
+    var v = Number(p.total) || 0;
+    if (p.pago) rec += v; else rcb += v;
+  });
+  $("vendas").innerHTML = "Recebido: <b>" + R(rec) + "</b> · A receber: <b>" + R(rcb) + "</b><br><small>" + n + " pedidos</small>";
+  if (!meus.length) { $("listaM").innerHTML = '<div class="vazio">Você ainda não fez pedidos.</div>'; return; }
+  $("listaM").innerHTML = meus.map(function(p){
+    var cs = "", prontos = [];
+    SETORES.forEach(function(s){
+      var st = p.setores && p.setores[s];
+      if (!st) return;
+      cs += '<span class="cs ' + st + '">' + s + ': ' + (SS[st] || st) + '</span>';
+      if (st === "pronto" && p.status !== "cancelado") prontos.push(s);
+    });
+    var itens = (p.itens || []).map(function(x){
+      return '<div class="row">' + x.qtd + 'x ' + esc(x.nome) + (x.sabor ? " – " + esc(x.sabor) : "") + '</div>';
+    }).join("");
+    var rd = prontos.length ? '<div class="ready">🔔 Pronto para retirar: ' + prontos.join(" e ") + '</div>' : "";
+    var pgt = (p.pagamento === "pix" ? "💠 Pix" : "💵 Dinheiro") + (p.pago ? " – pago ✅" : " – aguardando pagamento");
+    var bt = (!p.pago && p.status !== "cancelado") ? '<button class="big" style="padding:12px;margin-top:10px" onclick="pagar(\'' + p.id + '\')">Confirmar pagamento recebido</button>' : "";
+    return '<div class="card ' + p.status + '"><div class="top"><span><b>#' + p.id.slice(0, 5).toUpperCase() + '</b> · ' + esc((p.cliente || {}).nome) + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + '</span><span>' + hora(p) + '</span></div><div style="margin:6px 0;font-weight:bold;color:#5b1f7a">' + (STG[p.status] || p.status) + '</div>' + cs + rd + '<div style="margin-top:8px">' + itens + '</div><div style="margin-top:8px;font-size:14px">' + pgt + ' · <b>' + R(p.total) + '</b></div>' + bt + '</div>';
+  }).join("");
+}
+
+// ---------- Pix (BR Code) ----------
+function f(id, v) { return id + ("0" + v.length).slice(-2) + v; }
+function crc(s) {
+  var c = 0xFFFF;
+  for (var i = 0; i < s.length; i++) {
+    c ^= s.charCodeAt(i) << 8;
+    for (var j = 0; j < 8; j++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+  }
+  return ("000" + c.toString(16).toUpperCase()).slice(-4);
+}
+function brcode(v) {
+  var s = f("00", "01") + f("01", "12") +
+    f("26", f("00", "br.gov.bcb.pix") + f("01", PIX.chave)) +
+    f("52", "0000") + f("53", "986") + f("54", v.toFixed(2)) + f("58", "BR") +
+    f("59", PIX.nome.slice(0, 25)) + f("60", PIX.cidade) + f("62", f("05", "***")) + "6304";
+  return s + crc(s);
+}
+// ===== ESGOTADOS (definido pelo administrador) =====
+var CFG = {esgotados: []};
+function esg(n) { return CFG.esgotados.indexOf(n) >= 0; }
+var _ctl = ctlHTML;
+ctlHTML = function(c, i) {
+  if (esg(M[c][i][0])) return '<span style="color:#b00020;font-weight:bold;font-size:13px">ESGOTADO</span>';
+  return _ctl(c, i);
+};
+var _env = enviar;
+enviar = function() {
+  var ruim = [];
+  for (var k in cart) if (esg(cart[k].n) && ruim.indexOf(cart[k].n) < 0) ruim.push(cart[k].n);
+  if (ruim.length) { alert("Item esgotado, remova do pedido: " + ruim.join(", ")); return; }
+  _env();
+};
+if (db) db.collection("config").doc("estado").onSnapshot(function(s){
+  CFG.esgotados = (s.exists && s.data().esgotados) || [];
+  upd();
+}, function(){});
+// ===== PAGAMENTO NA HORA DO PEDIDO + SEM TOTAIS =====
+var okPend = false;
+
+function mostrarOk(id, p) {
+  var h = "<b>Pedido #" + id.slice(0, 5).toUpperCase() + "</b><br>" + esc(p.cliente.nome) + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + "<br><b>Total: " + R(p.total) + "</b><hr>";
+  if (p.pagamento === "pix") {
+    pixKey = brcode(p.total);
+    h += '<b>Pix: ' + R(p.total) + '</b><div id="qr" style="display:flex;justify-content:center;margin:10px"></div><div id="pix">' + pixKey + '</div><button class="sec" onclick="copiar()">Copiar código Pix</button>';
+  } else {
+    h += '💵 <b>Dinheiro</b><label>Valor recebido (R$)</label><input id="rec" type="number" inputmode="decimal" oninput="troco(' + p.total + ')"><div id="tr" style="font-size:20px;margin-top:10px;font-weight:bold;color:#2e8b3d"></div>';
+  }
+  h += '<div id="pgst" style="margin-top:16px"><button class="big" style="padding:14px" onclick="pagarOk(\'' + id + '\')">✅ Confirmar pagamento recebido</button></div>';
+  okPend = true;
+  $("okBox").innerHTML = h;
+  $("ok").hidden = false;
+  if (p.pagamento === "pix") { try { new QRCode($("qr"), {text: pixKey, width: 200, height: 200}); } catch (e) {} }
+}
+
+function pagarOk(id) {
+  db.collection("pedidos").doc(id).update({pago: true}).then(function(){
+    okPend = false;
+    $("pgst").innerHTML = '<div style="color:#2e8b3d;font-weight:bold;font-size:18px">✅ Pagamento confirmado</div>';
+  }).catch(function(e){ alert("Erro: " + e.message); });
+}
+
+function fecharOk() {
+  if (okPend && !confirm("O pagamento deste pedido ainda não foi confirmado. Fechar mesmo assim? (Você pode confirmar depois em Meus pedidos.)")) return;
+  okPend = false;
+  $("ok").hidden = true; aba("novo"); window.scrollTo(0, 0);
+}
+
+function renderMeus() {
+  var pend = 0;
+  meus.forEach(function(p){ if (!p.pago && p.status !== "cancelado") pend++; });
+  meus.sort(function(a, b){
+    var pa = (a.pago || a.status === "cancelado") ? 1 : 0, pb = (b.pago || b.status === "cancelado") ? 1 : 0;
+    return (pa - pb) || (ms(b) - ms(a));
+  });
+  $("vendas").innerHTML = pend
+    ? '<span style="color:#b26a00">⏳ ' + pend + ' pedido(s) aguardando pagamento</span>'
+    : '<span style="color:#2e8b3d">✅ Todos os pagamentos confirmados</span>';
+  if (!meus.length) { $("listaM").innerHTML = '<div class="vazio">Você ainda não fez pedidos.</div>'; return; }
+  $("listaM").innerHTML = meus.map(function(p){
+    var cs = "", prontos = [];
+    SETORES.forEach(function(s){
+      var st = p.setores && p.setores[s];
+      if (!st) return;
+      cs += '<span class="cs ' + st + '">' + s + ': ' + (SS[st] || st) + '</span>';
+      if (st === "pronto" && p.status !== "cancelado") prontos.push(s);
+    });
+    var itens = (p.itens || []).map(function(x){
+      return '<div class="row">' + x.qtd + 'x ' + esc(x.nome) + (x.sabor ? " – " + esc(x.sabor) : "") + '</div>';
+    }).join("");
+    var rd = prontos.length ? '<div class="ready">🔔 Pronto para retirar: ' + prontos.join(" e ") + '</div>' : "";
+    var forma = p.pagamento === "pix" ? "💠 Pix" : "💵 Dinheiro";
+    var pgt = p.pago ? forma + " – pago ✅" : forma + ' – <b style="color:#b26a00">⏳ AGUARDANDO PAGAMENTO</b>';
+    var bt = (!p.pago && p.status !== "cancelado") ? '<button class="big" style="padding:12px;margin-top:10px" onclick="pagar(\'' + p.id + '\')">Confirmar pagamento recebido</button>' : "";
+    return '<div class="card ' + p.status + '"><div class="top"><span><b>#' + p.id.slice(0, 5).toUpperCase() + '</b> · ' + esc((p.cliente || {}).nome) + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + '</span><span>' + hora(p) + '</span></div><div style="margin:6px 0;font-weight:bold;color:#5b1f7a">' + (STG[p.status] || p.status) + '</div>' + cs + rd + '<div style="margin-top:8px">' + itens + '</div><div style="margin-top:8px;font-size:14px">' + pgt + ' · <b>' + R(p.total) + '</b></div>' + bt + '</div>';
+  }).join("");
+}
+// ===== CARDÁPIO DINÂMICO (editado pelo administrador) =====
+function montarMenu() {
+  cats = Object.keys(M);
+  var h = "", chips = "";
+  cats.forEach(function(c, ci){
+    chips += '<button id="chip' + ci + '" class="chip" onclick="goto(' + ci + ')">' + esc(c) + '</button>';
+    h += '<h2 id="sec' + ci + '">' + esc(c) + '</h2>';
+    M[c].forEach(function(x, i){
+      h += '<div class="it"><div class="nm">' + esc(x[0]) + '<span>' + R(x[1]) + (x[2] ? " · escolha o sabor" : "") + '</span></div><div class="ctl" id="ctl' + ci + '_' + i + '"></div></div>';
+    });
+  });
+  $("chips").innerHTML = chips;
+  $("menu").innerHTML = h;
+  Object.keys(cart).forEach(function(k){
+    var cat = k.split("|")[0], achou = null;
+    (M[cat] || []).forEach(function(x){ if (x[0] === cart[k].n) achou = x; });
+    if (!achou) delete cart[k]; else cart[k].p = achou[1];
+  });
+  upd(); marca();
+}
+if (db) db.collection("config").doc("cardapio").onSnapshot(function(s){
+  if (!s.exists || !s.data().cats) return;
+  var nm = {}, ns = {};
+  s.data().cats.forEach(function(c){
+    if (!c.itens || !c.itens.length) return;
+    nm[c.nome] = c.itens.map(function(x){ return x.s ? [x.n, Number(x.p) || 0, 1] : [x.n, Number(x.p) || 0]; });
+    ns[c.nome] = c.setor;
+  });
+  if (!Object.keys(nm).length) return;
+  M = nm; SEC = ns;
+  montarMenu();
+}, function(){});
+</script>
+</body>
+</html>
