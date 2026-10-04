@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administração - Festival do Açaí</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;font-family:Arial,sans-serif;background:#f4eef8;color:#2b1636}
+button{font:inherit;cursor:pointer}
+input,select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font:inherit;background:#fff;margin-bottom:8px}
+.login{max-width:360px;margin:40px auto;background:#fff;padding:20px;border-radius:12px}
+.login h2{margin-top:0;color:#5b1f7a}
+.big{width:100%;background:#5b1f7a;color:#fff;border:0;border-radius:10px;padding:12px;font-size:16px}
+.err{color:#b00020;font-size:14px;margin-top:8px}
+header{background:#3d0f57;color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:17px}
+header button{background:#fff;color:#3d0f57;border:0;border-radius:8px;padding:8px 12px}
+.tabs{display:flex;gap:6px;padding:10px 10px 0;max-width:760px;margin:auto;overflow-x:auto}
+.tabs button{flex:1;min-width:90px;padding:10px;border:1px solid #5b1f7a;background:#fff;color:#5b1f7a;border-radius:10px}
+.tabs button.on{background:#5b1f7a;color:#fff}
+main{max-width:760px;margin:auto;padding:10px}
+.kpi{display:flex;gap:8px;margin-bottom:10px}
+.kpi div{flex:1;background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.kpi small{display:block;color:#777;font-size:12px}
+.kpi b{font-size:18px;color:#5b1f7a}
+.blk{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow-x:auto}
+.blk h3{margin:0 0 8px;color:#5b1f7a;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 4px;text-align:right;border-bottom:1px solid #eee}
+th:first-child,td:first-child{text-align:left}
+th{color:#777;font-weight:normal;font-size:12px}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;border-left:6px solid #5b1f7a;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:14px}
+.card.cancelado{border-left-color:#b00020;opacity:.75}
+.card.entregue{border-left-color:#999}
+.row2{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.row2>*{flex:1;min-width:130px}
+.row2 select{margin:0}
+.bt{border:0;border-radius:8px;padding:10px;color:#fff;background:#1e88e5}
+.bt.v{background:#2e8b3d}
+.bt.r{background:#b00020}
+.bt.o{background:#f57c00}
+.itl{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+.itl input{width:auto;margin:0}
+.lb{font-size:12px;color:#777;margin-top:6px}
+.pausa{padding:14px;border-radius:12px;text-align:center;font-weight:bold;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div id="telaLogin" class="login" hidden>
+  <h2>Administração</h2>
+  <input id="email" type="email" placeholder="E-mail">
+  <input id="senha" type="password" placeholder="Senha">
+  <button class="big" onclick="entrar()">Entrar</button>
+  <div class="err" id="erro"></div>
+</div>
+
+<div id="app" hidden>
+  <header><h1>Administração</h1><button onclick="sair()">Sair</button></header>
+  <div class="tabs">
+    <button id="t_resumo" class="on" onclick="aba('resumo')">Resumo</button>
+    <button id="t_pedidos" onclick="aba('pedidos')">Pedidos</button>
+    <button id="t_equipe" onclick="aba('equipe')">Equipe</button>
+    <button id="t_controles" onclick="aba('controles')">Controles</button>
+  </div>
+  <main>
+    <div class="err" id="erroG"></div>
+    <div id="v_resumo"></div>
+    <div id="v_pedidos" hidden>
+      <input id="busca" placeholder="Buscar pelo número do pedido (ex: A1B2C)" oninput="rPedidos()">
+      <select id="fst" onchange="rPedidos()">
+        <option value="">Todos os status</option><option value="novo">Novo</option><option value="aceito">Aceito</option>
+        <option value="preparo">Em preparo</option><option value="pronto">Pronto</option><option value="entrega">Em entrega</option>
+        <option value="entregue">Finalizado</option><option value="cancelado">Cancelado</option>
+      </select>
+      <div id="listaP"></div>
+    </div>
+    <div id="v_equipe" hidden></div>
+    <div id="v_controles" hidden></div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+function $(id){ return document.getElementById(id); }
+function R(v){ return "R$ " + Number(v || 0).toFixed(2).replace(".", ","); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+var ITENS = ["Churrasco de carne","Churrasco de frango","Churrasco misto","Pirarucu","Charque","Camarão","Peixe frito","Piau assado","Açaí porção 500ml","Açaí litro","Sorvete","Picolé","Arroz com galinha","Pudim","Torta salgada","Lasanha","Bolo Chocoloko","Coxinha","Suco","Coca-Cola 2L","Fanta uva 2L","Fanta laranja 2L","Tuchaua 2L","Splash 2L","Água mineral"];
+var STG = {novo:"Novo",aceito:"Aceito",preparo:"Em preparo",pronto:"Pronto",entrega:"Em entrega",entregue:"Finalizado",cancelado:"Cancelado"};
+var SS = {novo:"Novo",aceito:"Aceito",preparo:"Em preparo",pronto:"Pronto",entregue:"Entregue"};
+var SETORES = ["Restaurante","Lanchonete"];
+var auth = null, db = null, pedidos = [], eq = [], CFG = {pausado: false, esgotados: []}, unsubs = [], atual = "resumo";
+
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCz4k8BD-q5yGDyeKnRQ7aHNZbOcLvCTPk",
+    authDomain: "festival-acai-arauai.firebaseapp.com",
+    projectId: "festival-acai-arauai",
+    storageBucket: "festival-acai-arauai.firebasestorage.app",
+    messagingSenderId: "869331257830",
+    appId: "1:869331257830:web:3b1b138e9d59e199622e27"
+  });
+  auth = firebase.auth(); db = firebase.firestore();
+} catch (e) {}
+
+function parar() { unsubs.forEach(function(u){ u(); }); unsubs = []; }
+function telaLogin(msg) { parar(); $("app").hidden = true; $("telaLogin").hidden = false; if (msg) $("erro").textContent = msg; }
+if (!auth) { telaLogin("Sem conexão com o sistema. Verifique a internet e recarregue."); }
+else {
+  telaLogin();
+  auth.onAuthStateChanged(function(u){
+    if (!u) { telaLogin(); return; }
+    db.collection("equipe").doc((u.email || "").toLowerCase()).get().then(function(d){
+      var m = d.exists ? d.data() : null;
+      if (!m || m.papel !== "admin") { auth.signOut(); telaLogin("Este login não é de administrador."); return; }
+      $("telaLogin").hidden = true; $("app").hidden = false;
+      ouvir();
+    }).catch(function(){ auth.signOut(); telaLogin("Não foi possível verificar o acesso."); });
+  });
+}
+function entrar() {
+  $("erro").textContent = "";
+  auth.signInWithEmailAndPassword($("email").value.trim(), $("senha").value).catch(function(){ $("erro").textContent = "E-mail ou senha incorretos."; });
+}
+function sair() { auth.signOut(); }
+
+function erro(e) { $("erroG").textContent = "Erro: " + e.message; }
+function ouvir() {
+  parar();
+  unsubs.push(db.collection("pedidos").orderBy("criadoEm", "asc").onSnapshot(function(s){
+    pedidos = s.docs.map(function(d){ var p = d.data(); p.id = d.id; return p; }); $("erroG").textContent = ""; render();
+  }, erro));
+  unsubs.push(db.collection("equipe").onSnapshot(function(s){
+    eq = s.docs.map(function(d){ var m = d.data(); m.email = d.id; return m; }); render();
+  }, erro));
+  unsubs.push(db.collection("config").doc("estado").onSnapshot(function(s){
+    var d = s.exists ? s.data() : {};
+    CFG = {pausado: !!d.pausado, esgotados: d.esgotados || []}; render();
+  }, erro));
+}
+function aba(a) {
+  atual = a;
+  ["resumo","pedidos","equipe","controles"].forEach(function(x){
+    $("v_" + x).hidden = x !== a; $("t_" + x).className = x === a ? "on" : "";
+  });
+  render();
+}
+function render() {
+  if (atual === "resumo") rResumo();
+  if (atual === "pedidos") rPedidos();
+  if (atual === "equipe") rEquipe();
+  if (atual === "controles") rControles();
+}
+function ms(p) { try { return p.criadoEm.toMillis(); } catch (e) { return Date.now(); } }
+function hora(p) { try { return p.criadoEm.toDate().toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); } catch (e) { return "agora"; } }
+
+// ---------- Contabilidade ----------
+function calc(lista) {
+  var r = {tot: 0, rec: 0, rcb: 0, n: 0, canc: 0, forma: {pix: {rec: 0, rcb: 0}, dinheiro: {rec: 0, rcb: 0}}, orig: {delivery: {n: 0, v: 0}, salao: {n: 0, v: 0}}, set: {Restaurante: 0, Lanchonete: 0}, gar: {}};
+  lista.forEach(function(p){
+    if (p.status === "cancelado") { r.canc++; return; }
+    var v = Number(p.total) || 0;
+    r.n++; r.tot += v;
+    if (p.pago) r.rec += v; else r.rcb += v;
+    var f = r.forma[p.pagamento] || r.forma.dinheiro;
+    if (p.pago) f.rec += v; else f.rcb += v;
+    var o = r.orig[p.origem] || r.orig.delivery; o.n++; o.v += v;
+    (p.itens || []).forEach(function(x){ r.set[x.secao] = (r.set[x.secao] || 0) + (x.qtd * x.preco); });
+    if (p.origem === "salao") {
+      var nome = p.garcom || "?";
+      var g = r.gar[nome] = r.gar[nome] || {n: 0, v: 0, rec: 0, rcb: 0, at: 0};
+      g.n++; g.v += v;
+      if (p.pago) g.rec += v; else g.rcb += v;
+      if (p.status !== "entregue") g.at++;
+    }
+  });
+  return r;
+}
+function tbl(tit, cab, linhas) {
+  var h = '<div class="blk"><h3>' + tit + '</h3><table><tr>' + cab.map(function(c){ return "<th>" + c + "</th>"; }).join("") + "</tr>";
+  linhas.forEach(function(l){ h += "<tr>" + l.map(function(c){ return "<td>" + c + "</td>"; }).join("") + "</tr>"; });
+  return h + "</table></div>";
+}
+function kpi(t, v) { return "<div><small>" + t + "</small><b>" + v + "</b></div>"; }
+function rResumo() {
+  var r = calc(pedidos);
+  var h = '<div class="kpi">' + kpi("Total vendido", R(r.tot)) + kpi("Recebido", R(r.rec)) + kpi("A receber", R(r.rcb)) + "</div>";
+  h += '<div class="blk"><b>' + r.n + "</b> pedidos válidos · <b>" + r.canc + "</b> cancelados</div>";
+  h += tbl("Por forma de pagamento", ["", "Recebido", "A receber"], [["Pix", R(r.forma.pix.rec), R(r.forma.pix.rcb)], ["Dinheiro", R(r.forma.dinheiro.rec), R(r.forma.dinheiro.rcb)]]);
+  h += tbl("Por origem", ["", "Pedidos", "Valor"], [["Salão", r.orig.salao.n, R(r.orig.salao.v)], ["Delivery", r.orig.delivery.n, R(r.orig.delivery.v)]]);
+  h += tbl("Por setor (valor dos itens)", ["", "Valor"], SETORES.map(function(s){ return [s, R(r.set[s])]; }));
+  var gs = Object.keys(r.gar).sort(function(a, b){ return r.gar[b].v - r.gar[a].v; });
+  h += tbl("Por garçom", ["Garçom", "Pedidos", "Total", "Recebido", "A receber"], gs.map(function(n){ var g = r.gar[n]; return [esc(n), g.n, R(g.v), R(g.rec), R(g.rcb)]; }));
+  $("v_resumo").innerHTML = h;
+}
+
+// ---------- Pedidos (ajustes de emergência) ----------
+function rPedidos() {
+  var q = ($("busca").value || "").trim().toUpperCase(), st = $("fst").value;
+  var l = pedidos.filter(function(p){
+    if (st && p.status !== st) return false;
+    if (q && p.id.slice(0, 5).toUpperCase().indexOf(q) < 0) return false;
+    return true;
+  }).reverse();
+  var tot = l.length; l = l.slice(0, 40);
+  if (!l.length) { $("listaP").innerHTML = '<div class="blk">Nenhum pedido.</div>'; return; }
+  $("listaP").innerHTML = '<div class="lb">Mostrando ' + l.length + " de " + tot + "</div>" + l.map(cardP).join("");
+}
+function cardP(p) {
+  var c = p.cliente || {}, salao = p.origem === "salao";
+  var itens = (p.itens || []).map(function(x){ return x.qtd + "x " + esc(x.nome) + (x.sabor ? " – " + esc(x.sabor) : "") + " <small>(" + esc(x.secao) + ")</small>"; }).join("<br>");
+  var optG = Object.keys(STG).map(function(k){ return '<option value="' + k + '"' + (p.status === k ? " selected" : "") + ">" + STG[k] + "</option>"; }).join("");
+  var sets = SETORES.filter(function(s){ return p.setores && p.setores[s]; }).map(function(s){
+    var o = Object.keys(SS).map(function(k){ return '<option value="' + k + '"' + (p.setores[s] === k ? " selected" : "") + ">" + s + ": " + SS[k] + "</option>"; }).join("");
+    return '<select onchange="setSetor(\'' + p.id + '\',\'' + s + '\',this.value)">' + o + "</select>";
+  }).join("");
+  return '<div class="card ' + p.status + '"><b>#' + p.id.slice(0, 5).toUpperCase() + "</b> · " + (salao ? "Salão" : "Delivery") + " · " + hora(p) + "<br>" +
+    (salao ? esc(c.nome) + (p.mesa ? " · Mesa " + esc(p.mesa) : "") + " · Garçom: " + esc(p.garcom) : esc(c.nome) + " · " + esc(c.tel) + "<br>" + esc(c.end)) +
+    '<div style="margin-top:6px">' + itens + "</div>" +
+    '<div style="margin-top:6px"><b>' + (p.pagamento === "pix" ? "Pix" : "Dinheiro") + " · " + R(p.total) + "</b> · " + (p.pago ? "PAGO ✅" : "aguardando pagamento") + "</div>" +
+    '<div class="row2"><select onchange="setGeral(\'' + p.id + '\',this.value)">' + optG + "</select>" + sets + "</div>" +
+    '<div class="row2"><button class="bt ' + (p.pago ? "o" : "v") + '" onclick="setPago(\'' + p.id + "'," + (p.pago ? "false" : "true") + ')">' + (p.pago ? "Desfazer pagamento" : "Marcar como pago") + '</button><button class="bt r" onclick="excluir(\'' + p.id + '\')">Excluir pedido</button></div></div>';
+}
+function upd(id, o) { db.collection("pedidos").doc(id).update(o).catch(erro); }
+function setGeral(id, v) { upd(id, {status: v}); }
+function setSetor(id, s, v) { var o = {}; o["setores." + s] = v; upd(id, o); }
+function setPago(id, v) { upd(id, {pago: v}); }
+function excluir(id) {
+  var n = id.slice(0, 5).toUpperCase();
+  if (prompt("Para APAGAR o pedido #" + n + " definitivamente, digite EXCLUIR") === "EXCLUIR") db.collection("pedidos").doc(id).delete().catch(erro);
+}
+
+// ---------- Equipe ----------
+function rEquipe() {
+  var r = calc(pedidos), agora = Date.now();
+  var gar = eq.filter(function(m){ return m.papel === "garcom"; });
+  var h = tbl("Garçons", ["Garçom", "Pedidos", "Total", "A receber", "Ativos"], gar.map(function(m){
+    var g = r.gar[m.nome] || {n: 0, v: 0, rcb: 0, at: 0};
+    return [esc(m.nome), g.n, R(g.v), R(g.rcb), g.at];
+  }));
+  var pn = eq.filter(function(m){ return m.papel === "painel"; });
+  h += tbl("Painéis", ["Painel", "Setor", "Pendentes", "Mais antigo"], pn.map(function(m){
+    var pend = pedidos.filter(function(p){
+      return p.status !== "cancelado" && p.status !== "entregue" && p.setores && p.setores[m.setor] && p.setores[m.setor] !== "entregue";
+    });
+    var ant = pend.length ? Math.round((agora - Math.min.apply(null, pend.map(ms))) / 60000) + " min" : "-";
+    return [esc(m.nome), esc(m.setor), pend.length, ant];
+  }));
+  $("v_equipe").innerHTML = h;
+}
+
+// ---------- Controles ----------
+function rControles() {
+  var h = '<div class="pausa" style="background:' + (CFG.pausado ? "#fde0e0;color:#b00020" : "#e8f5e9;color:#2e8b3d") + '">Delivery: ' + (CFG.pausado ? "PAUSADO" : "recebendo pedidos") + '</div>';
+  h += '<button class="bt ' + (CFG.pausado ? "v" : "r") + '" style="width:100%;margin-bottom:12px" onclick="pausar()">' + (CFG.pausado ? "Reativar delivery" : "Pausar delivery") + "</button>";
+  h += '<div class="blk"><h3>Itens esgotados (marque para bloquear)</h3>';
+  ITENS.forEach(function(n, i){
+    h += '<label class="itl"><span>' + esc(n) + '</span><input type="checkbox" ' + (CFG.esgotados.indexOf(n) >= 0 ? "checked" : "") + ' onchange="esgotar(' + i + ',this.checked)"></label>';
+  });
+  $("v_controles").innerHTML = h + "</div>";
+}
+function salvarCfg(o) { db.collection("config").doc("estado").set(o, {merge: true}).catch(erro); }
+function pausar() { salvarCfg({pausado: !CFG.pausado}); }
+function esgotar(i, marcado) {
+  var l = CFG.esgotados.filter(function(n){ return n !== ITENS[i]; });
+  if (marcado) l.push(ITENS[i]);
+  salvarCfg({esgotados: l});
+}
+// ===== EDITOR DE CARDÁPIO =====
+var DEFM = {
+ "Restaurante":[["Churrasco de carne",7],["Churrasco de frango",7],["Churrasco misto",8],["Pirarucu",10],["Charque",8],["Camarão",8],["Peixe frito",7],["Piau assado",8]],
+ "Açaí":[["Açaí porção 500ml",8],["Açaí litro",15]],
+ "Lanchonete":[["Sorvete",5,1],["Picolé",4,1],["Arroz com galinha",6],["Pudim",5],["Torta salgada",7],["Lasanha",8],["Bolo Chocoloko",8],["Coxinha",4]],
+ "Bebidas":[["Suco",3],["Coca-Cola 2L",12],["Fanta uva 2L",12],["Fanta laranja 2L",12],["Tuchaua 2L",9],["Splash 2L",8,1],["Água mineral",4]]
+};
+var DEFS = {"Restaurante":"Restaurante","Açaí":"Restaurante","Lanchonete":"Lanchonete","Bebidas":"Lanchonete"};
+var CARD = [], draft = null, sujo = false, recard = true;
+
+function defCard() {
+  return Object.keys(DEFM).map(function(c){
+    return {nome: c, setor: DEFS[c], itens: DEFM[c].map(function(x){ return {n: x[0], p: x[1], s: x[2] ? 1 : 0}; })};
+  });
+}
+function clean(s) { return String(s || "").replace(/['"\\<>|]/g, "").trim(); }
+
+(function(){
+  var b = document.createElement("button");
+  b.id = "t_cardapio"; b.textContent = "Cardápio"; b.onclick = function(){ aba("cardapio"); };
+  document.querySelector(".tabs").appendChild(b);
+  var d = document.createElement("div");
+  d.id = "v_cardapio"; d.hidden = true;
+  document.querySelector("main").appendChild(d);
+})();
+
+function aba(a) {
+  atual = a;
+  ["resumo","pedidos","equipe","controles","cardapio"].forEach(function(x){
+    $("v_" + x).hidden = x !== a; $("t_" + x).className = x === a ? "on" : "";
+  });
+  if (a === "cardapio") recard = true;
+  render();
+}
+function render() {
+  if (atual === "resumo") rResumo();
+  if (atual === "pedidos") rPedidos();
+  if (atual === "equipe") rEquipe();
+  if (atual === "controles") rControles();
+  if (atual === "cardapio" && recard && !sujo) { recard = false; rCardapio(); }
+}
+function ouvir() {
+  parar();
+  unsubs.push(db.collection("pedidos").orderBy("criadoEm", "asc").onSnapshot(function(s){
+    pedidos = s.docs.map(function(d){ var p = d.data(); p.id = d.id; return p; }); $("erroG").textContent = ""; render();
+  }, erro));
+  unsubs.push(db.collection("equipe").onSnapshot(function(s){
+    eq = s.docs.map(function(d){ var m = d.data(); m.email = d.id; return m; }); render();
+  }, erro));
+  unsubs.push(db.collection("config").doc("estado").onSnapshot(function(s){
+    var d = s.exists ? s.data() : {};
+    CFG = {pausado: !!d.pausado, esgotados: d.esgotados || []}; render();
+  }, erro));
+  unsubs.push(db.collection("config").doc("cardapio").onSnapshot(function(s){
+    CARD = (s.exists && s.data().cats) ? s.data().cats : defCard();
+    ITENS = [];
+    CARD.forEach(function(c){ (c.itens || []).forEach(function(x){ ITENS.push(x.n); }); });
+    if (!sujo) { draft = JSON.parse(JSON.stringify(CARD)); recard = true; }
+    render();
+  }, erro));
+}
+
+function rCardapio() {
+  if (!draft) { $("v_cardapio").innerHTML = '<div class="blk">Carregando...</div>'; return; }
+  var salvar = '<button class="bt v" style="width:100%;margin-bottom:10px" onclick="salvarCardapio()">💾 Salvar cardápio</button>';
+  var h = salvar + '<div class="lb" style="margin-bottom:10px">As mudanças só valem depois de salvar.</div>';
+  draft.forEach(function(c, ci){
+    h += '<div class="blk"><h3>' + esc(c.nome) + ' <small style="color:#777;font-weight:normal">→ ' + (c.setor === "Restaurante" ? "Cozinha" : "Lanchonete") + '</small></h3>';
+    c.itens.forEach(function(x, ii){
+      h += '<div style="border-bottom:1px solid #eee;padding:6px 0"><input value="' + esc(x.n) + '" onchange="edNome(' + ci + ',' + ii + ',this)"><div class="row2"><input type="number" step="0.5" inputmode="decimal" value="' + x.p + '" onchange="edPreco(' + ci + ',' + ii + ',this.value)"><label class="itl" style="border:0"><span>Pede sabor</span><input type="checkbox" ' + (x.s ? "checked" : "") + ' onchange="edSabor(' + ci + ',' + ii + ',this.checked)"></label><button class="bt r" onclick="rmItem(' + ci + ',' + ii + ')">Remover</button></div></div>';
+    });
+    h += '<div style="margin-top:10px"><b>Novo item</b><input id="nn' + ci + '" placeholder="Nome do item"><div class="row2"><input id="np' + ci + '" type="number" step="0.5" inputmode="decimal" placeholder="Preço"><label class="itl" style="border:0"><span>Pede sabor</span><input id="ns' + ci + '" type="checkbox"></label><button class="bt v" onclick="addItem(' + ci + ')">Adicionar</button></div></div>';
+    h += '<button class="bt r" style="width:100%;margin-top:10px" onclick="rmCat(' + ci + ')">Remover categoria</button></div>';
+  });
+  h += '<div class="blk"><h3>Nova categoria</h3><input id="nc" placeholder="Nome da categoria"><select id="ncs"><option value="Restaurante">Setor: Cozinha (Restaurante)</option><option value="Lanchonete">Setor: Lanchonete</option></select><button class="bt v" style="width:100%" onclick="addCat()">Criar categoria</button></div>' + salvar;
+  $("v_cardapio").innerHTML = h;
+}
+function edNome(ci, ii, el) { var v = clean(el.value); el.value = v; draft[ci].itens[ii].n = v; sujo = true; }
+function edPreco(ci, ii, v) { draft[ci].itens[ii].p = parseFloat(String(v).replace(",", ".")); sujo = true; }
+function edSabor(ci, ii, v) { draft[ci].itens[ii].s = v ? 1 : 0; sujo = true; }
+function rmItem(ci, ii) {
+  if (!confirm("Remover " + draft[ci].itens[ii].n + "?")) return;
+  draft[ci].itens.splice(ii, 1); sujo = true; rCardapio();
+}
+function addItem(ci) {
+  var n = clean($("nn" + ci).value), p = parseFloat(String($("np" + ci).value).replace(",", "."));
+  if (!n || !(p >= 0)) { alert("Informe o nome e o preço do item."); return; }
+  draft[ci].itens.push({n: n, p: p, s: $("ns" + ci).checked ? 1 : 0}); sujo = true; rCardapio();
+}
+function rmCat(ci) {
+  if (!confirm("Remover a categoria " + draft[ci].nome + " e todos os seus itens?")) return;
+  draft.splice(ci, 1); sujo = true; rCardapio();
+}
+function addCat() {
+  var n = clean($("nc").value);
+  if (!n) { alert("Informe o nome da categoria."); return; }
+  for (var i = 0; i < draft.length; i++) if (draft[i].nome === n) { alert("Já existe uma categoria com esse nome."); return; }
+  draft.push({nome: n, setor: $("ncs").value, itens: []}); sujo = true; rCardapio();
+}
+function salvarCardapio() {
+  var nomes = {}, msg = "";
+  draft.forEach(function(c){
+    c.itens.forEach(function(x){
+      if (!x.n) msg = "Há um item sem nome em " + c.nome + ".";
+      else if (nomes[x.n]) msg = "Nome de item repetido: " + x.n + ".";
+      nomes[x.n] = 1;
+      if (!(x.p >= 0)) msg = "Preço inválido em " + (x.n || c.nome) + ".";
+    });
+  });
+  if (msg) { alert(msg); return; }
+  if (!Object.keys(nomes).length) { alert("O cardápio precisa ter ao menos um item."); return; }
+  db.collection("config").doc("cardapio").set({cats: draft}).then(function(){
+    sujo = false; recard = true;
+    salvarCfg({esgotados: CFG.esgotados.filter(function(n){ return nomes[n]; })});
+    alert("Cardápio salvo! Clientes e garçons já recebem as mudanças.");
+  }).catch(erro);
+}
+</script>
+</body>
+</html>
